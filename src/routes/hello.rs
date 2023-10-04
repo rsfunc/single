@@ -12,7 +12,7 @@ mod tests {
 
     #[actix_web::test]
     async fn test_hello() {
-        let mut app = test::init_service(
+        let app = test::init_service(
             App::new() // App
                 .service(info),
         )
@@ -20,7 +20,7 @@ mod tests {
         let resp: actix_web::dev::ServiceResponse = test::TestRequest::get()
             .uri("/")
             .insert_header(ContentType::plaintext())
-            .send_request(&mut app)
+            .send_request(&app)
             .await;
         assert!(resp.status().is_success());
 
