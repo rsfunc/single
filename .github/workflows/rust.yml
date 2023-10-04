@@ -15,6 +15,9 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+    - uses: taiki-e/cache-cargo-install-action@v1
+      with:
+        tool: clippy, fmt
     - uses: actions/checkout@v3
     - name: Set up cargo cache
       uses: actions/cache@v3
@@ -34,11 +37,11 @@ jobs:
           cargo clippy -- -D warnings
     - name: Install cargo check tools
       run: |
-            cargo install --locked cargo-deny || true
-            cargo install --locked cargo-outdated || true
-            cargo install --locked cargo-udeps || true
-            cargo install --locked cargo-audit || true
-            cargo install --locked cargo-pants || true          
+            # cargo install --locked cargo-deny || true
+            # cargo install --locked cargo-outdated || true
+            # cargo install --locked cargo-udeps || true
+            # cargo install --locked cargo-audit || true
+            # cargo install --locked cargo-pants || true          
     - name: Check
       run: |
             # cargo deny check
