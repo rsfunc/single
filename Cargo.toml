@@ -25,3 +25,8 @@ slog-async = "2.7.0"
 
 [dev-dependencies]
 pretty_assertions="1.0.0"
+
+[profile.release]
+# uncomment strip and opt-level to reduce the size of the file
+# strip = true  # Automatically strip symbols from the binary.
+# opt-level = "z"  # Optimize for size.

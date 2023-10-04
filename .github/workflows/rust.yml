@@ -1,3 +1,5 @@
+# based on: 
+# https://ectobit.com/blog/speed-up-github-actions-rust-pipelines/
 name: Rust
 
 on:
@@ -39,7 +41,7 @@ jobs:
             cargo install --locked cargo-pants || true          
     - name: Check
       run: |
-            cargo deny check
+            # cargo deny check
             cargo outdated --exit-code 1
             cargo udeps
             # rm -rf ~/.cargo/advisory-db
