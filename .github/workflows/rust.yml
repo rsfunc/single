@@ -45,7 +45,7 @@ jobs:
         with:
           # token: ${{ secrets.CODECOV_TOKEN }} # not required for public repos
           files: lcov.info
-          fail_ci_if_error: false    
+          fail_ci_if_error: true    
 
   build:
     runs-on: ubuntu-latest
