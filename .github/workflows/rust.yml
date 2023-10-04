@@ -11,35 +11,43 @@ on:
 env:
   CARGO_TERM_COLOR: always
 
-
-
 jobs:
-    lint:
-      name: Lint
-      runs-on: ubuntu-latest
-      env:
-        RUSTFLAGS: -D warnings
-        CARGO_TERM_COLOR: always
-      steps:
-        - uses: actions/checkout@v3
-        - uses: Swatinem/rust-cache@c5ed9ba6b7e1bb8aff90d43acd2f0af4990fa57c
-        - name: Lint (clippy)
-          uses: actions-rs/cargo@v1
-          with:
-            command: clippy
-            args: --all-features --all-targets
-#        - name: Lint (rustfmt)
-#          uses: actions-rs/cargo@v1
-#          with:
-#            command: xfmt
-#            args: --check
-#        - name: Install cargo readme
-#          uses: baptiste0928/cargo-install@v1
-#          with:
-#            crate: cargo-readme
-#            version: latest
-#        - name: Run cargo readme
-#          run: ./scripts/regenerate-readmes.sh
-#        - name: Check for differences
-#          run: git diff --exit-code
-      
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up cargo cache
+      uses: actions/cache@v3
+      continue-on-error: false
+      with:
+        path: |
+          ~/.cargo/bin/
+          ~/.cargo/registry/index/
+          ~/.cargo/registry/cache/
+          ~/.cargo/git/db/
+          target/            
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: ${{ runner.os }}-cargo-
+    - name: Lint
+      run: |
+          cargo fmt --all -- --check
+          cargo clippy -- -D warnings
+    - name: Install cargo check tools
+      run: |
+            # cargo install --locked cargo-deny || true
+            # cargo install --locked cargo-outdated || true
+            # cargo install --locked cargo-udeps || true
+            # cargo install --locked cargo-audit || true
+            # cargo install --locked cargo-pants || true          
+    - name: Check
+      run: |
+            # cargo deny check
+            # cargo outdated --exit-code 1
+            # cargo udeps
+            # rm -rf ~/.cargo/advisory-db
+            # cargo audit
+            # cargo pants      
+    - name: Build
+      run: cargo build --verbose
+    - name: Run tests
+      run: cargo test --verbose

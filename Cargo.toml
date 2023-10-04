@@ -17,7 +17,7 @@ actix-web = "4"
 actix-http = "3.4.0"
 tokio = { version = "1.32", features = ["full"] }
 # using https://docs.rs/actix-session/latest/actix_session/
-actix-session = { version = "0.7.2", features = ["cookie-session"] }
+# actix-session = { version = "0.7.2", features = ["cookie-session"] }
 serde={ version = "1.0", features = ["derive"] }
 slog = "2.7.0"
 slog-term = "2.9.0"

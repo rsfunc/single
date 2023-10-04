@@ -1,5 +1,4 @@
-use actix_session::{storage::CookieSessionStore, SessionMiddleware};
-use actix_web::{cookie::Key, web, App, HttpServer};
+use actix_web::{web, App, HttpServer};
 
 use slog;
 use slog::{o, Drain, Logger};
@@ -22,14 +21,9 @@ fn configure_log() -> Logger {
 
 pub async fn create_server() -> std::io::Result<()> {
     let log = configure_log();
-    let secret_key = Key::generate();
 
     HttpServer::new(move || {
         App::new()
-            .wrap(SessionMiddleware::new(
-                CookieSessionStore::default(),
-                secret_key.clone(),
-            ))
             .app_data(web::Data::new(log.clone()))
             .service(crate::routes::info)
             .service(crate::routes::health_check)
