@@ -30,8 +30,8 @@ jobs:
       run: |
           cargo fmt --all -- --check
           cargo clippy -- -D warnings
-          - name: Install cargo check tools
-          run: |
+    - name: Install cargo check tools
+      run: |
             cargo install --locked cargo-deny || true
             cargo install --locked cargo-outdated || true
             cargo install --locked cargo-udeps || true
