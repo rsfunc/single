@@ -32,7 +32,7 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: ${{ runner.os }}-cargo-
       - name: Install Rust
-        run: rustup update stable
+        run: rustup update stable 
       - name: Install cargo-llvm-cov
         #uses: taiki-e/install-action@cargo-llvm-cov
         uses: taiki-e/cache-cargo-install-action@v1
