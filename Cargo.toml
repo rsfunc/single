@@ -1,0 +1,27 @@
+[package]
+name = "single"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+path = "src/lib.rs"
+
+[[bin]]
+path = "src/main.rs"
+name = "only"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+actix-web = "4"
+actix-http = "3.4.0"
+tokio = { version = "1.32", features = ["full"] }
+# using https://docs.rs/actix-session/latest/actix_session/
+actix-session = { version = "0.7.2", features = ["cookie-session"] }
+serde={ version = "1.0", features = ["derive"] }
+slog = "2.7.0"
+slog-term = "2.9.0"
+slog-async = "2.7.0"
+
+[dev-dependencies]
+pretty_assertions="1.0.0"
