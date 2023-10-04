@@ -34,7 +34,7 @@ pub async fn create_server() -> std::io::Result<()> {
             .service(crate::routes::info)
             .service(crate::routes::health_check)
     })
-    .bind(("127.0.0.1", 8081))?
+    .bind(("127.0.0.1", 8080))?
     .run()
     .await
 }
