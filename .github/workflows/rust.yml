@@ -108,6 +108,7 @@ jobs:
      - if: ${{ steps.cache-cargo.outputs.cache-hit != 'true' }}
        run: echo 'Failed to retrieve cargo cache';exit 1  
      # The actual job
+     - uses: actions/checkout@v4
      - name: cargo build
        run: cargo build
      - name: Run tests
