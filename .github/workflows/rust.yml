@@ -44,7 +44,7 @@ jobs:
             rustup default ${{ env.RUST_UP_DEFAULT }}  
             cargo install cargo-build-dependencies
             cargo install grcov
-      - run: ls -1l ~/.cargo/bin/
+      - run: ls -1lh ~/.cargo/bin/
     
           
   build:
@@ -71,10 +71,10 @@ jobs:
     - run: cargo check
     - name: Make '~/.cargo/git/db' in case git repositories are not used
       run:  mkdir -p ~/.cargo/git/db  
-    - run: ls ~/.cargo/registry/index/
-    - run: ls ~/.cargo/registry/cache/
-    - run: ls ~/.cargo/git/db/
-    - run: ls target/   
+    - run: ls -1lh ~/.cargo/registry/index/
+    - run: ls -1lh ~/.cargo/registry/cache/
+    - run: ls -1lh ~/.cargo/git/db/
+    - run: ls -1lh target/   
     - name: Save to cargo cache
       uses: actions/cache/save@v3
       with:
