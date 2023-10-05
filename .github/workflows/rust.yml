@@ -95,7 +95,7 @@ jobs:
       run: cargo test run
             
   fmt:
-    needs: [preperation, coverage]
+    needs: [preperation]
     runs-on: ubuntu-latest
     env:
       CARGO_TERM_COLOR: always
@@ -114,7 +114,7 @@ jobs:
         run: cargo fmt --all -- --check
 
   clippy:
-    needs: [build, coverage]
+    needs: [build]
     runs-on: ubuntu-latest
     env:
       CARGO_TERM_COLOR: always
@@ -173,7 +173,7 @@ jobs:
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
         with:
-          # token: ${{ secrets.CODECOV_TOKEN }} # not required for public repos
+          token: ${{ secrets.CODECOV_TOKEN }} # not required for public repos
           files: lcov.info
       #    fail_ci_if_error: true    
 
