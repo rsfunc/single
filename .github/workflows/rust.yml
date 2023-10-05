@@ -9,79 +9,152 @@ on:
     branches: [ "main" ]
 
 env:
-  # note, clippy using nightly so fix rust for this
   RUST_UP_DEFAULT: nightly-2023-05-01
   CARGO_TERM_COLOR: always
-  CACHE_PATH:  |
-    ~/.cargo/bin/
+  # note you will find ~/.cargo/bin/ for caching but that we resolve using preperation
+  CARGO_CACHE_PATH:  |
     ~/.cargo/registry/index/
     ~/.cargo/registry/cache/
     ~/.cargo/git/db/
     target/   
-  CACHE_VERSION: 3
+  RUSTUP_CACHE_PATH:  |
+    ~/.rustup
+    ~/.cargo/bin/   
+  COMPONENT: clippy,rustfmt,llvm-tools-preview # NOTE: if you change COMPONENT, also increase the CACHE_VERSION!
+  CACHE_VERSION: 15
+
 
 jobs:
-  fmt:
-    if: ${{ false }}
+  preperation:
+    runs-on: ubuntu-latest
+    steps:
+      - id: cache-rustup
+        name: Cache Rust toolchain
+        uses: actions/cache@v3
+        with:
+          path: ${{ env.RUSTUP_CACHE_PATH }}
+          key: toolchain-${{ env.RUST_UP_DEFAULT }}-v${{ env.CACHE_VERSION }}-
+      - if: ${{ steps.cache-rustup.outputs.cache-hit != 'true' }}
+        run: |
+            rustup toolchain install ${{ env.RUST_UP_DEFAULT }} --profile minimal --component ${{ env.COMPONENT }}
+            rustup default ${{ env.RUST_UP_DEFAULT }}  
+          
+  build:
+    runs-on: ubuntu-latest
     needs: preperation
+    steps:
+    - id: cache-rustup
+      name: Obtain Rust toolchain
+      uses: actions/cache/restore@v3
+      with:
+          path: ${{ env.RUSTUP_CACHE_PATH }}
+          key: toolchain-${{ env.RUST_UP_DEFAULT }}-v${{ env.CACHE_VERSION }}-
+          fail-on-cache-miss: true # does not brake the build ?
+    - if: ${{ steps.cache-rustup.outputs.cache-hit != 'true' }}
+      run: echo 'Failed to retrieve cache';exit 1
+    - uses: actions/checkout@v4 
+    - id: cache-cargo
+      name: Restore cargo cache if exists
+      uses: actions/cache/restore@v3
+      with:
+        path: ${{ env.CARGO_CACHE_PATH }}
+        key: ${{ runner.os }}-cargo-${{ env.CACHE_VERSION }}-${{ hashFiles('**/Cargo.lock') }}
+    - name: cargo check -> to speedup clippy 
+      run: cargo check
+    - name: cargo build
+      run: cargo build
+    - name: Build related test but no execution
+      run: cargo test --no-run
+    - name: Make '~/.cargo/git/db' in case git repositories are not used
+      run:  mkdir -p ~/.cargo/git/db  
+    - run: ls ~/.cargo/registry/index/
+    - run: ls ~/.cargo/registry/cache/
+    - run: ls ~/.cargo/git/db/
+    - run: ls target/   
+    - name: Save to cargo cache
+      uses: actions/cache/save@v3
+      with:
+        path: ${{ env.CARGO_CACHE_PATH }}
+        key: ${{ runner.os }}-cargo-${{ env.CACHE_VERSION }}-${{ hashFiles('**/Cargo.lock') }}
+    # If the tests fail, then at least we have a cache...
+    - name: Run tests
+      run: cargo test run
+            
+  fmt:
+    needs: [preperation, coverage]
     runs-on: ubuntu-latest
     env:
       CARGO_TERM_COLOR: always
     steps:
-      - name: Set up preperation cache
-        uses: Swatinem/rust-cache@v2
+      - id: cache-rustup
+        name: Obtain Rust toolchain
+        uses: actions/cache/restore@v3
         with:
-            save-if: false
-            prefix-key: "preperation"
+          path: ${{ env.RUSTUP_CACHE_PATH }}
+          key: toolchain-${{ env.RUST_UP_DEFAULT }}-v${{ env.CACHE_VERSION }}-
+      - if: ${{ steps.cache-rustup.outputs.cache-hit != 'true' }}
+        run: echo 'Failed to retrieve cache';exit 1
+      # The actual job
       - uses: actions/checkout@v4 
-      - run: rustup default ${{env.RUST_UP_DEFAULT}}
       - name: Fmt
         run: cargo fmt --all -- --check
 
   clippy:
-    if: ${{ false }}
-    needs: build
+    needs: [build, coverage]
     runs-on: ubuntu-latest
     env:
       CARGO_TERM_COLOR: always
     steps:
-      - name: Set up preperation cache
-        uses: Swatinem/rust-cache@v2
+      - id: cache-rustup
+        name: Obtain Rust toolchain
+        uses: actions/cache/restore@v3
         with:
-            save-if: false
-            prefix-key: "preperation"
-      - uses: actions/checkout@v4 
-      - run: rustup default ${{env.RUST_UP_DEFAULT}}
-      - name: Set up bin cache
-        uses: Swatinem/rust-cache@v2
+          path: ${{ env.RUSTUP_CACHE_PATH }}
+          key: toolchain-${{ env.RUST_UP_DEFAULT }}-v${{ env.CACHE_VERSION }}-
+      - if: ${{ steps.cache-rustup.outputs.cache-hit != 'true' }}
+        run: echo 'Failed to retrieve cache';exit 1
+      - id: cache-cargo
+        name: Set up cargo cache
+        uses: actions/cache/restore@v3
+        continue-on-error: false
         with:
-          prefix-key: "build"
-          save-if: false
+          path: ${{ env.CARGO_CACHE_PATH }}
+          key: ${{ runner.os }}-cargo-${{ env.CACHE_VERSION }}-${{ hashFiles('**/Cargo.lock') }}
+      - if: ${{ steps.cache-cargo.outputs.cache-hit != 'true' }}
+        run: echo 'Failed to retrieve cargo cache';exit 1  
+      # The actual job
+      - uses: actions/checkout@v4
       - name: Clippy
         run: cargo clippy -- -D warnings
 
         
   coverage:
-    if: ${{ false }}
     needs: build
     runs-on: ubuntu-latest
     env:
       CARGO_TERM_COLOR: always
     steps:
-      - uses: actions/checkout@v4
-      - name: Set up cargo cache
+      - id: cache-rustup
+        name: Obtain Rust toolchain
+        uses: actions/cache/restore@v3
+        with:
+          path: ${{ env.RUSTUP_CACHE_PATH }}
+          key: toolchain-${{ env.RUST_UP_DEFAULT }}-v${{ env.CACHE_VERSION }}-
+      - if: ${{ steps.cache-rustup.outputs.cache-hit != 'true' }}
+        run: echo 'Failed to retrieve cache';exit 1
+      - id: cache-cargo
+        name: Set up cargo cache
         uses: actions/cache/restore@v3
         continue-on-error: false
         with:
-          path: $CACHE_PATH
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: ${{ runner.os }}-coverage-cargo-
-      - name: Install Rust
-        run: rustup update stable 
+          path: ${{ env.CARGO_CACHE_PATH }}
+          key: ${{ runner.os }}-cargo-${{ env.CACHE_VERSION }}-${{ hashFiles('**/Cargo.lock') }}
+      - if: ${{ steps.cache-cargo.outputs.cache-hit != 'true' }}
+        run: echo 'Failed to retrieve cargo cache';exit 1  
       - name: Install cargo-llvm-cov
-        uses: taiki-e/cache-cargo-install-action@v1
-        with:
-          tool: cargo-llvm-cov
+        run: curl -LsSf https://github.com/taiki-e/cargo-llvm-cov/releases/latest/download/cargo-llvm-cov-x86_64-unknown-linux-gnu.tar.gz | tar xzf - -C ~/.cargo/bin
+      # The actual job
+      - uses: actions/checkout@v4
       - name: Generate code coverage
         run: cargo llvm-cov --all-features --workspace --lcov --output-path lcov.info
       - name: Upload coverage to Codecov
@@ -91,34 +164,4 @@ jobs:
           files: lcov.info
           fail_ci_if_error: true    
 
-  preperation:
-    runs-on: ubuntu-latest
-    steps:
-      - id: cache-rustup
-        name: Cache Rust toolchain
-        uses: actions/cache@v3
-        with:
-          path: ~/.rustup
-          key: toolchain-${{ env.RUST_UP_DEFAULT }}-v${{ env.CACHE_VERSION }}-
-      - if: ${{ steps.cache-rustup.outputs.cache-hit != 'true' }}
-        run: rustup default ${{ env.RUST_UP_DEFAULT }}
-  build:
-    runs-on: ubuntu-latest
-    needs: preperation
-    steps:
-    - name: Obtain Rust toolchain
-      uses: actions/cache/restore@v3
-      with:
-          path: ~/.rustup
-          key: toolchain-v${{ env.CACHE_VERSION }}-${{ env.RUST_UP_DEFAULT }}-
-          enableCrossOsArchive: true
-          fail-on-cache-miss: true # does not brake ?
-    - uses: actions/checkout@v3
-    - name: Set up bin cache
-      uses: Swatinem/rust-cache@v2
-      with:
-        prefix-key: build-v${{ env.CACHE_VERSION }}-
-    - name: Build
-      run: cargo build --verbose
-    - name: Run tests
-      run: cargo test --verbose
+
