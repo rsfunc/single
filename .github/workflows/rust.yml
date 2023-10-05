@@ -135,7 +135,7 @@ jobs:
         with:
           path: ${{ env.CARGO_CACHE_PATH }}
           key: ${{ runner.os }}-cargo-${{ env.CACHE_VERSION }}-${{ hashFiles('**/Cargo.lock') }}
-      - run: echo steps.cache-cargo.outputs.cache-hit := {{ steps.cache-cargo.outputs.cache-hit }}
+      - run: echo steps.cache-cargo.outputs.cache-hit := ${{ steps.cache-cargo.outputs.cache-hit }}
       - if: ${{ steps.cache-cargo.outputs.cache-hit != 'true' }}
         run: echo 'Failed to retrieve cargo cache';exit 1  
       # The actual job
