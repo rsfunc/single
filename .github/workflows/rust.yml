@@ -9,6 +9,7 @@ on:
     branches: [ "main" ]
 
 env:
+  RUSTFLAGS: -C instrument-coverage=all
   RUST_UP_DEFAULT: nightly-2023-05-01
   CARGO_TERM_COLOR: always
   # note you will find ~/.cargo/bin/ for caching but that we resolve using preperation
@@ -21,17 +22,21 @@ env:
     ~/.rustup
     ~/.cargo/bin/   
   COMPONENT: clippy,rustfmt # NOTE: if you change COMPONENT, also increase the CACHE_VERSION!
-  CACHE_VERSION: 20
+  CACHE_VERSION: 24
 
 
 jobs:
   preperation:
     runs-on: ubuntu-latest
     steps:
+      # inpiration from: https://github.com/johnthagen/min-sized-rust
       - run: mkdir -p ~/.cargo
-      - run: echo "[profile.release]" > ~/.cargo/config.toml
+      - run: echo "[profile.min]" > ~/.cargo/config.toml
+      - run: echo inherits = \"release\" >>  ~/.cargo/config.toml
+      - run: echo strip = true>> ~/.cargo/config.toml
       - run: echo opt-level = \"z\" >> ~/.cargo/config.toml
-      - run: rm ~/.cargo/config.toml
+      - run: echo codegen-units = 1 >> ~/.cargo/config.toml
+      - run: cat ~/.cargo/config.toml
       - id: cache-rustup
         name: Cache Rust toolchain
         uses: actions/cache@v3
@@ -42,8 +47,8 @@ jobs:
         run: |
             rustup toolchain install ${{ env.RUST_UP_DEFAULT }} --profile minimal --component ${{ env.COMPONENT }}
             rustup default ${{ env.RUST_UP_DEFAULT }}  
-            cargo install cargo-build-dependencies
-            cargo install grcov
+            cargo install cargo-build-dependencies --profile min
+            cargo install grcov --profile min
       - run: ls -1lh ~/.cargo/bin/
     
           
@@ -67,6 +72,7 @@ jobs:
       with:
         path: ${{ env.CARGO_CACHE_PATH }}
         key: ${{ runner.os }}-cargo-${{ env.CACHE_VERSION }}-${{ hashFiles('**/Cargo.lock') }}
+    - run: export RUSTFLAGS="${{ env.RUSTFLAGS }}"
     - run: cargo build-dependencies
     - run: cargo check
     - name: Make '~/.cargo/git/db' in case git repositories are not used
@@ -113,6 +119,7 @@ jobs:
     env:
       CARGO_TERM_COLOR: always
     steps:
+      - run: export RUSTFLAGS="${{ env.RUSTFLAGS }}"
       - id: cache-rustup
         name: Obtain Rust toolchain
         uses: actions/cache/restore@v3
@@ -142,6 +149,7 @@ jobs:
     env:
       CARGO_TERM_COLOR: always
     steps:
+      - run: export RUSTFLAGS="${{ env.RUSTFLAGS }}"
       - id: cache-rustup
         name: Obtain Rust toolchain
         uses: actions/cache/restore@v3
@@ -161,8 +169,6 @@ jobs:
         run: echo 'Failed to retrieve cargo cache';exit 1  
       - uses: actions/checkout@v4
       - run: cargo test
-        env:
-          RUSTFLAGS: "-Zinstrument-coverage"
       - run: grcov . --binary-path target/debug/deps/ -s . -t lcov --ignore-not-existing --ignore '../**' --ignore '/*' -o ./lcov.info
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
