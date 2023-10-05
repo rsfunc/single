@@ -24,7 +24,8 @@ mod tests {
             .await;
         assert!(resp.status().is_success());
 
-        let resp_bytes = actix_http::body::to_bytes(resp.into_body()).await.unwrap();
+        let body = resp.into_body();
+        let resp_bytes = actix_http::body::to_bytes(body).await.unwrap();
         let resp_message = std::str::from_utf8(&resp_bytes).unwrap();
         pretty_assertions::assert_eq!(resp_message, "Hello world!")
     }

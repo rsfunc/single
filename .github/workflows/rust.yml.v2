@@ -22,7 +22,6 @@ env:
 
 jobs:
   fmt:
-    if: ${{ false }}
     needs: preperation
     runs-on: ubuntu-latest
     env:
@@ -39,7 +38,6 @@ jobs:
         run: cargo fmt --all -- --check
 
   clippy:
-    if: ${{ false }}
     needs: build
     runs-on: ubuntu-latest
     env:
@@ -94,30 +92,27 @@ jobs:
   preperation:
     runs-on: ubuntu-latest
     steps:
-      - id: cache-rustup
-        name: Cache Rust toolchain
-        uses: actions/cache@v3
+      - run: rustup default ${{env.RUST_UP_DEFAULT}}
+      - name: Set up preperation cache
+        uses: Swatinem/rust-cache@v2
         with:
-          path: ~/.rustup
-          key: toolchain-${{ env.RUST_UP_DEFAULT }}-v${{ env.CACHE_VERSION }}-
-      - if: ${{ steps.cache-rustup.outputs.cache-hit != 'true' }}
-        run: rustup default ${{ env.RUST_UP_DEFAULT }}
+          prefix-key: "preperation"
+    
   build:
     runs-on: ubuntu-latest
-    needs: preperation
+    needs: [preperation, fmt]
     steps:
-    - name: Obtain Rust toolchain
-      uses: actions/cache/restore@v3
-      with:
-          path: ~/.rustup
-          key: toolchain-v${{ env.CACHE_VERSION }}-${{ env.RUST_UP_DEFAULT }}-
-          enableCrossOsArchive: true
-          fail-on-cache-miss: true # does not brake ?
+    -   name: Set up preperation cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          save-if: false
+          prefix-key: "preperation"
+    - run: rustup default ${{env.RUST_UP_DEFAULT}}
     - uses: actions/checkout@v3
     - name: Set up bin cache
       uses: Swatinem/rust-cache@v2
       with:
-        prefix-key: build-v${{ env.CACHE_VERSION }}-
+        prefix-key: "build"
     - name: Build
       run: cargo build --verbose
     - name: Run tests
