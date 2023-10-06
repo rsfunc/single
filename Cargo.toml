@@ -13,13 +13,9 @@ name = "only"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-actix-web = "4"
 tokio = { version = "1.32", features = ["full"] }
-serde={ version = "1.0", features = ["derive"] }
 
 [dev-dependencies]
-pretty_assertions="1.0.0"
-actix-http = "3.4.0"
 
 [profile.release]
 codegen-units = 1
