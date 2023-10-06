@@ -1,1 +1,2 @@
-codecov?
+ignore:
+- "src/main.rs"
