@@ -37,13 +37,11 @@ jobs:
       #- run: mkdir -p ~/.cargo
       #- run: echo -e "[profile.min]\ninherits = \"release\"\nstrip = true\nopt-level = \"z\"\ncodegen-units = 1" > ~/.cargo/config.toml
       #- run: cat ~/.cargo/config.toml
-      #- name: Cache Rust compilation
-      #  uses: metalbear-co/sccache-action@v1.1.0
-      #  with:
-      #    github-token: ${{ secrets.GITHUB_TOKEN }}
-      #- name: Run sccache stat for check
-      #  shell: bash
-      #  run: ${RUSTC_WRAPPER} --show-stats
+      - if: ${{ !env.ACT }}
+        name: Cache Rust compilation
+        uses: metalbear-co/sccache-action@v1.1.0
+        with:
+         github-token: ${{ secrets.GITHUB_TOKEN }}     
       - id: cache-rustup
         name: Cache Rust toolchain
         uses: actions/cache@v3
