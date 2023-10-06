@@ -2,6 +2,8 @@
 # https://ectobit.com/blog/speed-up-github-actions-rust-pipelines/
 name: Rust
 
+# note if you use act, use for example catthehacker/ubuntu:rust-22.04 as image
+
 on:
   push:
     branches: [ "main" ]
@@ -11,7 +13,9 @@ on:
 env:
   #SCCACHE_GHA_ENABLED: "true"
   #RUSTC_WRAPPER: "sccache"
-  RUSTFLAGS: -C instrument-coverage=all
+  #RUSTFLAGS: -C instrument-coverage=all
+  #TODO: add check that these are the same as tarpaulin
+  RUSTFLAGS: -Cdebuginfo=2 --cfg=tarpaulin -Clink-dead-code -Cinstrument-coverage=all
   RUST_UP_DEFAULT: nightly-2023-05-01
   CARGO_TERM_COLOR: always
   # note you will find ~/.cargo/bin/ for caching but that we resolve using preperation
@@ -26,13 +30,16 @@ env:
   # NOTE: if you change COMPONENT, also increase the CACHE_VERSION!
   # related: https://rust-lang.github.io/rustup-components-history/
   COMPONENT: clippy,rustfmt,miri 
-  CACHE_VERSION: 32
+  CACHE_VERSION: 35
 
 
 jobs:
   rustup:
+    env:
+      RUSTFLAGS:
     runs-on: ubuntu-latest
     steps:
+      - run: echo RUSTFLAGS := ${RUSTFLAGS}
       # inpiration from: https://github.com/johnthagen/min-sized-rust
       #- run: mkdir -p ~/.cargo
       #- run: echo -e "[profile.min]\ninherits = \"release\"\nstrip = true\nopt-level = \"z\"\ncodegen-units = 1" > ~/.cargo/config.toml
@@ -53,6 +60,8 @@ jobs:
             rustup toolchain install ${{ env.RUST_UP_DEFAULT }} --profile minimal --component ${{ env.COMPONENT }}
             rustup default ${{ env.RUST_UP_DEFAULT }}
             curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
+      - if: ${{ steps.cache-rustup.outputs.cache-hit != 'true' }}
+        run: |
             cargo binstall cargo-tarpaulin -y  
             cargo binstall cargo-build-dependencies -y
       - name: Install cargo-build-dependencies, grcov
@@ -65,6 +74,8 @@ jobs:
              echo "rm rust-gdb";rm ~/.cargo/bin/rust-gdb ||:
              echo "rm rust-gdbgui";rm ~/.cargo/bin/rust-gdbgui ||:
              ls -1lh ~/.cargo/bin/
+      - run: cargo tarpaulin --print-rust-flags
+      
              
 
       #- name: Run sccache stat for check
@@ -76,6 +87,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: rustup
     steps:
+    - run: echo RUSTFLAGS := ${RUSTFLAGS}
     - id: cache-rustup
       name: Obtain Rust toolchain
       uses: actions/cache/restore@v3
@@ -111,7 +123,8 @@ jobs:
     needs: [dependencies]
     runs-on: ubuntu-latest
     steps:
-     - run: export RUSTFLAGS="${{ env.RUSTFLAGS }}"
+     - run: echo RUSTFLAGS := ${RUSTFLAGS}
+     #- run: export RUSTFLAGS="${{ env.RUSTFLAGS }}"
      - id: cache-rustup
        name: Obtain Rust toolchain
        uses: actions/cache/restore@v3
@@ -200,7 +213,8 @@ jobs:
     env:
       CARGO_TERM_COLOR: always
     steps:
-      - run: export RUSTFLAGS="${{ env.RUSTFLAGS }}"
+      # - run: export RUSTFLAGS="${{ env.RUSTFLAGS }}"
+      - run: echo RUSTFLAGS := ${RUSTFLAGS}
       - id: cache-rustup
         name: Obtain Rust toolchain
         uses: actions/cache/restore@v3
@@ -220,6 +234,7 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ env.CACHE_VERSION }}-${{ hashFiles('**/Cargo.lock') }}
       - if: ${{ steps.cache-cargo.outputs.cache-hit != 'true' }}
         run: echo 'Failed to retrieve cargo cache';exit 1  
+      - run: cargo tarpaulin --print-rust-flags
       - if: ${{ !env.ACT }}
         name: Cache Rust compilation
         uses: metalbear-co/sccache-action@v1.1.0
