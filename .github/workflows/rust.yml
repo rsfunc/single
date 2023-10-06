@@ -24,7 +24,7 @@ env:
     ~/.rustup
     ~/.cargo/bin/   
   COMPONENT: clippy,rustfmt # NOTE: if you change COMPONENT, also increase the CACHE_VERSION!
-  CACHE_VERSION: 26
+  CACHE_VERSION: 27
 
 
 jobs:
