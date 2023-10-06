@@ -61,7 +61,7 @@ jobs:
       - run: ls -1lh ~/.cargo/bin/
       - name: Run sccache stat for check
         shell: bash
-        run: echo ${RUSTC_WRAPPER} --show-stats
+        run: ${RUSTC_WRAPPER} --show-stats
     
           
   dependencies:
