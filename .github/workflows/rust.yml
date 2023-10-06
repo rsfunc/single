@@ -117,6 +117,8 @@ jobs:
          key: toolchain-${{ env.RUST_UP_DEFAULT }}-v${{ env.CACHE_VERSION }}-
      - if: ${{ steps.cache-rustup.outputs.cache-hit != 'true' }}
        run: echo 'Failed to retrieve cache';exit 1
+     # check out, since that is needed for the cache
+     - uses: actions/checkout@v4      
      - id: cache-cargo
        name: Set up cargo cache
        uses: actions/cache/restore@v3
@@ -133,7 +135,6 @@ jobs:
        with:
          github-token: ${{ secrets.GITHUB_TOKEN }}
       # The actual job
-     - uses: actions/checkout@v4
      - name: cargo build
        run: cargo build
      - name: Run tests
@@ -173,6 +174,8 @@ jobs:
           key: toolchain-${{ env.RUST_UP_DEFAULT }}-v${{ env.CACHE_VERSION }}-
       - if: ${{ steps.cache-rustup.outputs.cache-hit != 'true' }}
         run: echo 'Failed to retrieve cache';exit 1
+      # check out, since that is needed for the cache
+      - uses: actions/checkout@v4      
       - id: cache-cargo
         name: Set up cargo cache
         uses: actions/cache/restore@v3
@@ -184,7 +187,6 @@ jobs:
       - if: ${{ steps.cache-cargo.outputs.cache-hit != 'true' }}
         run: echo 'Failed to retrieve cargo cache';exit 1  
       # The actual job
-      - uses: actions/checkout@v4
       - name: Clippy
         run: cargo clippy -- -D warnings
 
@@ -204,6 +206,8 @@ jobs:
           key: toolchain-${{ env.RUST_UP_DEFAULT }}-v${{ env.CACHE_VERSION }}-
       - if: ${{ steps.cache-rustup.outputs.cache-hit != 'true' }}
         run: echo 'Failed to retrieve cache';exit 1
+      # check out, since that is needed for the cache
+      - uses: actions/checkout@v4      
       - id: cache-cargo
         name: Set up cargo cache
         uses: actions/cache/restore@v3
@@ -213,7 +217,6 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ env.CACHE_VERSION }}-${{ hashFiles('**/Cargo.lock') }}
       - if: ${{ steps.cache-cargo.outputs.cache-hit != 'true' }}
         run: echo 'Failed to retrieve cargo cache';exit 1  
-      - uses: actions/checkout@v4
       - run: cargo test
       - run: grcov . --binary-path target/debug/deps/ -s . -t lcov --ignore-not-existing --ignore '../**' --ignore '/*' -o ./lcov.info
       - name: Upload coverage to Codecov
