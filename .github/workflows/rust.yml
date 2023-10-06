@@ -26,7 +26,7 @@ env:
   # NOTE: if you change COMPONENT, also increase the CACHE_VERSION!
   # related: https://rust-lang.github.io/rustup-components-history/
   COMPONENT: clippy,rustfmt,miri 
-  CACHE_VERSION: 30
+  CACHE_VERSION: 32
 
 
 jobs:
@@ -54,10 +54,11 @@ jobs:
             rustup default ${{ env.RUST_UP_DEFAULT }}
             curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
             cargo binstall cargo-tarpaulin -y  
+            cargo binstall cargo-build-dependencies -y
       - name: Install cargo-build-dependencies, grcov
         if: ${{ steps.cache-rustup.outputs.cache-hit != 'true' }}
         run: |
-             cargo install cargo-build-dependencies
+             #cargo install cargo-build-dependencies
              # cargo install grcov
       - name: Show available bins, remove non used to spare some room
         run: | 
