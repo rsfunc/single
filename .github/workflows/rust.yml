@@ -44,18 +44,18 @@ jobs:
       - run: echo opt-level = \"z\" >> ~/.cargo/config.toml
       - run: echo codegen-units = 1 >> ~/.cargo/config.toml
       - run: cat ~/.cargo/config.toml
-      - id: cache-rustup
-        name: Cache Rust toolchain
-        uses: actions/cache@v3
-        with:
-          path: ${{ env.RUSTUP_CACHE_PATH }}
-          key: toolchain-${{ env.RUST_UP_DEFAULT }}-v${{ env.CACHE_VERSION }}-
-      - if: ${{ steps.cache-rustup.outputs.cache-hit != 'true' }}
-        run: |
+      #- id: cache-rustup
+      #  name: Cache Rust toolchain
+      #  uses: actions/cache@v3
+      #  with:
+      #    path: ${{ env.RUSTUP_CACHE_PATH }}
+      #    key: toolchain-${{ env.RUST_UP_DEFAULT }}-v${{ env.CACHE_VERSION }}-
+      #- if: ${{ steps.cache-rustup.outputs.cache-hit != 'true' }}
+      - run: |
             rustup toolchain install ${{ env.RUST_UP_DEFAULT }} --profile minimal --component ${{ env.COMPONENT }}
             rustup default ${{ env.RUST_UP_DEFAULT }}  
-      - if: ${{ steps.cache-rustup.outputs.cache-hit != 'true' }}
-        run: |
+      #- if: ${{ steps.cache-rustup.outputs.cache-hit != 'true' }}
+      - run: |
             cargo install cargo-build-dependencies --profile min
             cargo install grcov --profile min
       - run: ls -1lh ~/.cargo/bin/
