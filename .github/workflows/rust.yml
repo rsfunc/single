@@ -9,6 +9,8 @@ on:
     branches: [ "main" ]
 
 env:
+  SCCACHE_GHA_ENABLED: "true"
+  RUSTC_WRAPPER: "sccache"
   RUSTFLAGS: -C instrument-coverage=all
   RUST_UP_DEFAULT: nightly-2023-05-01
   CARGO_TERM_COLOR: always
@@ -22,13 +24,18 @@ env:
     ~/.rustup
     ~/.cargo/bin/   
   COMPONENT: clippy,rustfmt # NOTE: if you change COMPONENT, also increase the CACHE_VERSION!
-  CACHE_VERSION: 25
+  CACHE_VERSION: 26
 
 
 jobs:
   preperation:
     runs-on: ubuntu-latest
     steps:
+      - name: Cache Rust compilation
+        uses: metalbear-co/sccache-action@v1.1.0
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
       # inpiration from: https://github.com/johnthagen/min-sized-rust
       - run: mkdir -p ~/.cargo
       - run: echo "[profile.min]" > ~/.cargo/config.toml
@@ -47,9 +54,14 @@ jobs:
         run: |
             rustup toolchain install ${{ env.RUST_UP_DEFAULT }} --profile minimal --component ${{ env.COMPONENT }}
             rustup default ${{ env.RUST_UP_DEFAULT }}  
+      - if: ${{ steps.cache-rustup.outputs.cache-hit != 'true' }}
+        run: |
             cargo install cargo-build-dependencies --profile min
             cargo install grcov --profile min
       - run: ls -1lh ~/.cargo/bin/
+      - name: Run sccache stat for check
+        shell: bash
+        run: ${SCCACHE_PATH} --show-stats
     
           
   dependencies:
