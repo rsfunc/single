@@ -9,8 +9,8 @@ on:
     branches: [ "main" ]
 
 env:
-  SCCACHE_GHA_ENABLED: "true"
-  RUSTC_WRAPPER: "sccache"
+  #SCCACHE_GHA_ENABLED: "true"
+  #RUSTC_WRAPPER: "sccache"
   RUSTFLAGS: -C instrument-coverage=all
   RUST_UP_DEFAULT: nightly-2023-05-01
   CARGO_TERM_COLOR: always
@@ -56,12 +56,12 @@ jobs:
             rustup default ${{ env.RUST_UP_DEFAULT }}  
       - if: ${{ steps.cache-rustup.outputs.cache-hit != 'true' }}
         run: |
-            cargo install cargo-build-dependencies --profile min
-            cargo install grcov --profile min
+            # cargo install cargo-build-dependencies --profile min
+            # cargo install grcov --profile min
       - run: ls -1lh ~/.cargo/bin/
       - name: Run sccache stat for check
         shell: bash
-        run: ${SCCACHE_PATH} --show-stats
+        run: echo ${SCCACHE_PATH} --show-stats
     
           
   dependencies:
@@ -97,8 +97,6 @@ jobs:
   build:
     needs: [dependencies]
     runs-on: ubuntu-latest
-    env:
-      CARGO_TERM_COLOR: always
     steps:
      - run: export RUSTFLAGS="${{ env.RUSTFLAGS }}"
      - id: cache-rustup
