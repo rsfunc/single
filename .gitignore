@@ -1,2 +1,6 @@
 /target
 .DS_Store
+.github/workflows/rust.yml.v3
+.github/workflows/rust.yml.v4
+.github/workflows/rust.yml.v5
+.github/workflows/rust.yml.v6

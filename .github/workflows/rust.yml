@@ -59,9 +59,7 @@ jobs:
             # cargo install cargo-build-dependencies --profile min
             # cargo install grcov --profile min
       - run: ls -1lh ~/.cargo/bin/
-      - name: Run sccache stat for check
-        shell: bash
-        run: echo ${SCCACHE_PATH} --show-stats
+      - run: cargo sccache --show-stats
     
           
   dependencies:
