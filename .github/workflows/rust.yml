@@ -23,50 +23,57 @@ env:
   RUSTUP_CACHE_PATH:  |
     ~/.rustup
     ~/.cargo/bin/   
-  COMPONENT: clippy,rustfmt # NOTE: if you change COMPONENT, also increase the CACHE_VERSION!
-  CACHE_VERSION: 27
+  # NOTE: if you change COMPONENT, also increase the CACHE_VERSION!
+  # related: https://rust-lang.github.io/rustup-components-history/
+  COMPONENT: clippy,rustfmt,miri 
+  CACHE_VERSION: 29
 
 
 jobs:
-  preperation:
+  rustup:
     runs-on: ubuntu-latest
     steps:
-      - name: Cache Rust compilation
-        uses: metalbear-co/sccache-action@v1.1.0
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-
       # inpiration from: https://github.com/johnthagen/min-sized-rust
-      - run: mkdir -p ~/.cargo
-      - run: echo "[profile.min]" > ~/.cargo/config.toml
-      - run: echo inherits = \"release\" >>  ~/.cargo/config.toml
-      - run: echo strip = true>> ~/.cargo/config.toml
-      - run: echo opt-level = \"z\" >> ~/.cargo/config.toml
-      - run: echo codegen-units = 1 >> ~/.cargo/config.toml
-      - run: cat ~/.cargo/config.toml
-      #- id: cache-rustup
-      #  name: Cache Rust toolchain
-      #  uses: actions/cache@v3
+      #- run: mkdir -p ~/.cargo
+      #- run: echo -e "[profile.min]\ninherits = \"release\"\nstrip = true\nopt-level = \"z\"\ncodegen-units = 1" > ~/.cargo/config.toml
+      #- run: cat ~/.cargo/config.toml
+      #- name: Cache Rust compilation
+      #  uses: metalbear-co/sccache-action@v1.1.0
       #  with:
-      #    path: ${{ env.RUSTUP_CACHE_PATH }}
-      #    key: toolchain-${{ env.RUST_UP_DEFAULT }}-v${{ env.CACHE_VERSION }}-
-      #- if: ${{ steps.cache-rustup.outputs.cache-hit != 'true' }}
-      - run: |
+      #    github-token: ${{ secrets.GITHUB_TOKEN }}
+      #- name: Run sccache stat for check
+      #  shell: bash
+      #  run: ${RUSTC_WRAPPER} --show-stats
+      - id: cache-rustup
+        name: Cache Rust toolchain
+        uses: actions/cache@v3
+        with:
+          path: ${{ env.RUSTUP_CACHE_PATH }}
+          key: toolchain-${{ env.RUST_UP_DEFAULT }}-v${{ env.CACHE_VERSION }}-
+      - if: ${{ steps.cache-rustup.outputs.cache-hit != 'true' }}
+        run: |
             rustup toolchain install ${{ env.RUST_UP_DEFAULT }} --profile minimal --component ${{ env.COMPONENT }}
             rustup default ${{ env.RUST_UP_DEFAULT }}  
-      #- if: ${{ steps.cache-rustup.outputs.cache-hit != 'true' }}
-      - run: |
-            cargo install cargo-build-dependencies --profile min
-            cargo install grcov --profile min
-      - run: ls -1lh ~/.cargo/bin/
-      - name: Run sccache stat for check
-        shell: bash
-        run: ${RUSTC_WRAPPER} --show-stats
+      - name: Install cargo-build-dependencies, grcov
+        if: ${{ steps.cache-rustup.outputs.cache-hit != 'true' }}
+        run: |
+             cargo install cargo-build-dependencies
+             cargo install grcov
+      - name: Show available bins, remove non used to spare some room
+        run: | 
+             echo "rm rust-gdb";rm ~/.cargo/bin/rust-gdb ||:
+             echo "rm rust-gdbgui";rm ~/.cargo/bin/rust-gdbgui ||:
+             ls -1lh ~/.cargo/bin/
+             
+
+      #- name: Run sccache stat for check
+      #  shell: bash
+      #  run: ${RUSTC_WRAPPER} --show-stats
     
           
   dependencies:
     runs-on: ubuntu-latest
-    needs: preperation
+    needs: rustup
     steps:
     - id: cache-rustup
       name: Obtain Rust toolchain
@@ -77,14 +84,19 @@ jobs:
           fail-on-cache-miss: true # does not brake the build ?
     - if: ${{ steps.cache-rustup.outputs.cache-hit != 'true' }}
       run: echo 'Failed to retrieve cache';exit 1
-    - uses: actions/checkout@v4 
+    - if: ${{ !env.ACT }}
+      name: Cache Rust compilation
+      uses: metalbear-co/sccache-action@v1.1.0
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+    - uses: actions/checkout@v4
+    - run: echo $RUSTFLAGS 
     - id: cache-cargo
       name: Restore cargo cache if exists
       uses: actions/cache@v3
       with:
         path: ${{ env.CARGO_CACHE_PATH }}
         key: ${{ runner.os }}-cargo-${{ env.CACHE_VERSION }}-${{ hashFiles('**/Cargo.lock') }}
-    - run: export RUSTFLAGS="${{ env.RUSTFLAGS }}"
     - run: cargo build-dependencies
     - run: cargo check
     - name: Make '~/.cargo/git/db' in case git repositories are not used
@@ -117,7 +129,12 @@ jobs:
      - run: echo steps.cache-cargo.outputs.cache-hit := ${{ steps.cache-cargo.outputs.cache-hit }}
      - if: ${{ steps.cache-cargo.outputs.cache-hit != 'true' }}
        run: echo 'Failed to retrieve cargo cache';exit 1  
-     # The actual job
+     - if: ${{ !env.ACT }}
+       name: Cache Rust compilation
+       uses: metalbear-co/sccache-action@v1.1.0
+       with:
+         github-token: ${{ secrets.GITHUB_TOKEN }}
+      # The actual job
      - uses: actions/checkout@v4
      - name: cargo build
        run: cargo build
@@ -125,7 +142,7 @@ jobs:
        run: cargo test run
          
   fmt:
-    needs: [preperation]
+    needs: [rustup]
     runs-on: ubuntu-latest
     env:
       CARGO_TERM_COLOR: always
