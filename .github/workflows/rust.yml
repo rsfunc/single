@@ -220,6 +220,11 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ env.CACHE_VERSION }}-${{ hashFiles('**/Cargo.lock') }}
       - if: ${{ steps.cache-cargo.outputs.cache-hit != 'true' }}
         run: echo 'Failed to retrieve cargo cache';exit 1  
+      - if: ${{ !env.ACT }}
+        name: Cache Rust compilation
+        uses: metalbear-co/sccache-action@v1.1.0
+        with:
+         github-token: ${{ secrets.GITHUB_TOKEN }} 
       - run: cargo tarpaulin --skip-clean --out Lcov
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
