@@ -59,7 +59,9 @@ jobs:
             # cargo install cargo-build-dependencies --profile min
             # cargo install grcov --profile min
       - run: ls -1lh ~/.cargo/bin/
-      - run: cargo sccache --show-stats
+      - name: Run sccache stat for check
+        shell: bash
+        run: echo ${RUSTC_WRAPPER} --show-stats
     
           
   dependencies:
